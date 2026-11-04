@@ -145,7 +145,7 @@ async function agentsToUse(named: Flags, worker: string) {
     contextFile: "",
     folder: "",
   } as const;
-  for (const name of ["claude", "codex", "agy"]) {
+  for (const name of ["agy", "claude", "codex"]) {
     if (wanted && wanted !== name) continue;
     const adapter = await adapterFor(name);
     try {
@@ -379,7 +379,8 @@ async function doctor() {
     console.log(`${ok ? "●" : "○"} ${words}`);
     if (!ok) bad += 1;
   };
-  say(Number(process.versions.node.split(".")[0]) >= 24, `Node ${process.versions.node}`);
+  const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
+  say(nodeMajor > 22 || (nodeMajor === 22 && nodeMinor >= 16), `Node ${process.versions.node}`);
   if (!existsSync(CONFIG_FILE)) return say(false, "还没装好：运行 agent-autoloop init");
   const config = readConfig();
   if (config.hub) {

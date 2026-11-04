@@ -59,6 +59,15 @@
       "to": "agy",
       "cwd": "/Users/yourname/.agent-autoloop",
       "prompt": "阅读资料文件中的邮件内容。若是验证码或紧急告警，立即发 notice 或 ask 卡片通知主人；若是需要回复的邮件，先拟好草稿发 ask 卡片请主人拍板后再调用 qq-mail send 发送。"
+    },
+    {
+      "name": "每日早晚待办与邮件汇总",
+      "when": {
+        "cron": "0 9,20 * * *"
+      },
+      "to": "agy",
+      "cwd": "/Users/yourname/.agent-autoloop",
+      "prompt": "调用 qq-mail list 20 检查今日重点邮件与未决事项，生成精简早晚报并发送桌面通知。"
     }
   ]
 }

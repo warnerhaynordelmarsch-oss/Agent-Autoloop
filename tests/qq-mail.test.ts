@@ -177,7 +177,7 @@ test("qq-mail: summary and detail are properly truncated", () => {
 
 
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after } from "node:test";
@@ -242,6 +242,8 @@ if (cmd === "list") {
   const watcherRule = parsed.rules.find((r) => r.emits);
   const handlerRule = parsed.rules.find((r) => r.when.source === "qq-mail");
   assert.ok(watcherRule && handlerRule);
+  assert.equal(watcherRule.emits!.source, handlerRule.when.source);
+  assert.deepEqual(watcherRule.emits!.types, handlerRule.when.types);
   for (const ev of events) {
     assert.ok(watcherRule.emits!.types.includes(ev.type));
     assert.ok(handlerRule.when.types!.includes(ev.type));
@@ -268,4 +270,26 @@ test("watch-qq-mail.sh: fails explicitly with non-zero exit code when qq-mail fa
     encoding: "utf8",
   });
   assert.notEqual(failedJson.status, 0);
+});
+
+// Failure mode: installer accepts an unsupported Node release or rejects a supported one.
+test("install.sh: enforces Node 22.16 minimum", () => {
+  const bin = join(tmpDir, "install-bin");
+  mkdirSync(bin, { recursive: true });
+  const realNode = process.execPath;
+  writeFileSync(join(bin, "node"), `#!/bin/sh
+if [ "$1" = "-v" ]; then echo "v$TEST_NODE_VERSION"; exit; fi
+exec "${realNode}" -e 'Object.defineProperty(process.versions, "node", { value: process.env.TEST_NODE_VERSION }); eval(process.argv[1])' "$2"
+`);
+  writeFileSync(join(bin, "git"), "#!/bin/sh\necho git-reached >&2\nexit 42\n");
+  chmodSync(join(bin, "node"), 0o755);
+  chmodSync(join(bin, "git"), 0o755);
+  for (const [version, accepted] of [["22.15.0", false], ["22.16.0", true], ["24.0.0", true]] as const) {
+    const run = spawnSync("sh", [join(ROOT, "install.sh")], {
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, TEST_NODE_VERSION: version, AGENT_AUTOLOOP_HOME: join(tmpDir, `home-${version}`) },
+      encoding: "utf8",
+    });
+    assert.equal(run.stderr.includes("git-reached"), accepted, version);
+    if (!accepted) assert.match(run.stdout, /需要 Node.js 22\.16/);
+  }
 });
