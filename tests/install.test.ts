@@ -168,8 +168,8 @@ test("the next step is try alone when a service has been started", () => {
 });
 
 for (const [node, words] of [
-  ["old", /需要 Node\.js 24 或更新，现在是 v22\.1\.0/],
-  ["none", /需要 Node\.js 24 或更新，这台电脑上没找到/],
+  ["old", /需要 Node\.js 22\.16 或更新.*现在是 v22\.1\.0/],
+  ["none", /需要 Node\.js 22\.16 或更新.*这台电脑上没找到/],
 ] as const) {
   test(`with Node ${node === "old" ? "too old" : "missing"} it says what to run, and those lines work as written`, () => {
     const it = computer({ node });

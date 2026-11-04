@@ -19,6 +19,7 @@ qq-mail status
 ```
 
 ## 要改哪几处
+- **主目录路径**：把 `agents.watcher.command` 与 `rules` 中的 `cwd` 路径里的 `/Users/yourname` 替换为自己电脑上的真实主目录路径（如 `/Users/dorian` 或 `/home/ubuntu`；中台执行命令时不经 shell，不会自动展开 `~`）。
 - **Worker 标识**：把 `agents` 中的 `"worker": "local"` 换成你实际接单电脑的 worker 名称。
 - **巡检脚本路径**：若将 `watch-qq-mail.sh` 放置于其他目录，更新 `watcher` 的 `command` 路径。
 - **执行频率**：默认每 5 分钟（`*/5 * * * *`），可按需调整 cron。

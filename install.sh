@@ -22,8 +22,8 @@ END
 }
 
 command -v git >/dev/null || { echo "需要 git。"; exit 1; }
-command -v node >/dev/null || need_node "需要 Node.js 24 或更新，这台电脑上没找到。"
-node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 22 ? 0 : 1)' || need_node "需要 Node.js 24 或更新，现在是 $(node -v)。"
+command -v node >/dev/null || need_node "需要 Node.js 22.16 或更新（推荐 Node 24），这台电脑上没找到。"
+node -e 'const [maj, min] = process.versions.node.split(".").map(Number); process.exit(maj > 22 || (maj === 22 && min >= 16) ? 0 : 1)' || need_node "需要 Node.js 22.16 或更新（推荐 Node 24），现在是 $(node -v)。"
 
 mkdir -p -m 700 "$ROOT"
 chmod 700 "$ROOT"

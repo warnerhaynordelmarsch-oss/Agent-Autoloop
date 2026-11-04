@@ -174,3 +174,98 @@ test("qq-mail: summary and detail are properly truncated", () => {
   assert.equal([...event.summary].length, 200);
   assert.equal([...event.detail].length, 4000);
 });
+
+
+import { spawnSync } from "node:child_process";
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { after } from "node:test";
+import { parseRules } from "../protocol/rules.ts";
+import { readMessage, resultFrom } from "../worker/contract.ts";
+
+const ROOT = join(import.meta.dirname, "..");
+const tmpDir = mkdtempSync(join(tmpdir(), "agent-autoloop-qqmail-"));
+after(() => rmSync(tmpDir, { recursive: true, force: true }));
+
+test("watch-qq-mail.sh: reads mail body via qq-mail read, detects body verification codes, truncates long body, and matches recipe rules", () => {
+  const fakeBin = join(tmpDir, "fake-qq-mail");
+  const longBody = "正".repeat(5000);
+  writeFileSync(
+    fakeBin,
+    `#!/usr/bin/env node
+const [cmd, arg] = process.argv.slice(2);
+if (cmd === "list") {
+  console.log(JSON.stringify([
+    { uid: "2001", from: "notice@service.com", subject: "账户登录提醒", date: "2026-11-04" },
+    { uid: "2002", from: "colleague@company.com", subject: "普通项目讨论", date: "2026-11-04" },
+    { uid: "1999", from: "old@company.com", subject: "旧邮件", date: "2026-11-03" }
+  ]));
+} else if (cmd === "read" && arg === "2001") {
+  console.log(JSON.stringify({ uid: "2001", from: "notice@service.com", subject: "账户登录提醒", body: "您好，您的动态登录验证码为 839201，5 分钟内有效。" }));
+} else if (cmd === "read" && arg === "2002") {
+  console.log(JSON.stringify({ uid: "2002", from: "colleague@company.com", subject: "普通项目讨论", body: ${JSON.stringify(longBody)} }));
+} else {
+  process.exit(1);
+}
+`,
+  );
+  chmodSync(fakeBin, 0o755);
+
+  const done = spawnSync("sh", [join(ROOT, "examples", "watch-qq-mail.sh"), "10", "2000"], {
+    env: { ...process.env, QQ_MAIL_BIN: fakeBin },
+    encoding: "utf8",
+  });
+  assert.equal(done.status, 0, done.stderr);
+
+  const { result, problem } = resultFrom(readMessage(done.stdout), {});
+  assert.equal(problem, undefined);
+  assert.equal(result.outcome, "done");
+  const events = result.events!;
+  assert.equal(events.length, 2);
+
+  // 2001: ordinary subject, but body has "验证码" -> must be classified as mail.urgent and carry full body
+  assert.equal(events[0].id, "qq-mail-2001");
+  assert.equal(events[0].type, "mail.urgent");
+  assert.match(events[0].detail, /839201/);
+
+  // 2002: normal subject & body, 5000 chars truncated to 4000
+  assert.equal(events[1].id, "qq-mail-2002");
+  assert.equal(events[1].type, "mail.unread");
+  assert.equal([...events[1].detail].length, 4000);
+
+  // Verify compatibility with examples/recipes/qq-mail-triage/rules.json
+  const rawRules = readFileSync(join(ROOT, "examples", "recipes", "qq-mail-triage", "rules.json"), "utf8");
+  const parsed = parseRules(rawRules, 0, "Asia/Shanghai");
+  const watcherAgent = parsed.agents.watcher;
+  assert.ok(!watcherAgent.command!.some((arg) => arg.startsWith("~")), "command must not rely on unexpanded ~");
+  const watcherRule = parsed.rules.find((r) => r.emits);
+  const handlerRule = parsed.rules.find((r) => r.when.source === "qq-mail");
+  assert.ok(watcherRule && handlerRule);
+  for (const ev of events) {
+    assert.ok(watcherRule.emits!.types.includes(ev.type));
+    assert.ok(handlerRule.when.types!.includes(ev.type));
+  }
+});
+
+test("watch-qq-mail.sh: fails explicitly with non-zero exit code when qq-mail fails or prints invalid JSON", () => {
+  const brokenBin = join(tmpDir, "broken-qq-mail");
+  writeFileSync(brokenBin, "#!/bin/sh\necho 'IMAP error' >&2\nexit 1\n");
+  chmodSync(brokenBin, 0o755);
+
+  const failedCli = spawnSync("sh", [join(ROOT, "examples", "watch-qq-mail.sh"), "10"], {
+    env: { ...process.env, QQ_MAIL_BIN: brokenBin },
+    encoding: "utf8",
+  });
+  assert.notEqual(failedCli.status, 0);
+
+  const badJsonBin = join(tmpDir, "badjson-qq-mail");
+  writeFileSync(badJsonBin, "#!/bin/sh\necho 'not-valid-json'\n");
+  chmodSync(badJsonBin, 0o755);
+
+  const failedJson = spawnSync("sh", [join(ROOT, "examples", "watch-qq-mail.sh"), "10"], {
+    env: { ...process.env, QQ_MAIL_BIN: badJsonBin },
+    encoding: "utf8",
+  });
+  assert.notEqual(failedJson.status, 0);
+});
