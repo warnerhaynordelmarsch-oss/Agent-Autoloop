@@ -177,7 +177,7 @@ export async function conformance(base: string, config: Probe, request: typeof f
   return { checks, passed: true };
 }
 
-if (import.meta.main) {
+if (import.meta.main ?? (process.argv[1] && process.argv[1].endsWith("conformance.ts"))) {
   const config = JSON.parse(readFileSync(process.argv[3], "utf8"));
   console.log(JSON.stringify(await conformance(process.argv[2], config), null, 2));
 }

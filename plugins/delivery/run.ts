@@ -1,5 +1,5 @@
 // One delivery run: `node run.ts owner/name`, reading its event from AGENT_AUTOLOOP_CONTEXT and printing a receipt.
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createIO } from "./github.ts";
@@ -35,7 +35,7 @@ export async function run(repo: string, context: any, testLocalHealth = false) {
   }
 }
 
-if (import.meta.main) {
+if (import.meta.main ?? (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(import.meta.filename))) {
   const [repo, ...args] = process.argv.slice(2);
   const context = JSON.parse(readFileSync(process.env.AGENT_AUTOLOOP_CONTEXT!, "utf8"));
   run(repo, context, args.includes("--test-local-health"))

@@ -1,4 +1,5 @@
 // What's waiting for delivery, as events: each labelled item, with an id that stays the same until something changes.
+import { realpathSync } from "node:fs";
 import { github, pages } from "./github.ts";
 import { pendingEvents } from "./input.ts";
 
@@ -24,7 +25,7 @@ export async function poll(repo: string) {
   return pendingEvents(repo, rows);
 }
 
-if (import.meta.main) {
+if (import.meta.main ?? (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(import.meta.filename))) {
   const events = await poll(process.argv[2]);
   console.log(`看过了，${events.length} 件待处理\n\`\`\`agent-autoloop\n${JSON.stringify({ events })}\n\`\`\``);
 }
