@@ -94,9 +94,11 @@ export async function bridge(turn: Turn) {
     if (turn.resume) {
       if (!init.agentCapabilities?.loadSession) throw new Error("这个 ACP Agent 不支持恢复会话");
       session = turn.resume;
-      await rpc("session/load", { sessionId: session, cwd: turn.cwd, mcpServers: [] });
+      const loaded = await rpc("session/load", { sessionId: session, cwd: turn.cwd, mcpServers: [] });
+      if (loaded?.sessionId) session = loaded.sessionId;
     } else session = (await rpc("session/new", { cwd: turn.cwd, mcpServers: [] })).sessionId;
     if (typeof session !== "string" || !session) throw new Error("ACP 没有返回会话编号");
+    if (turn.model) await rpc("session/set_config_option", { sessionId: session, configId: "model", value: turn.model }).catch(() => {});
     // Before the prompt goes: the agent can start on it at once, and this has to be there if the bridge is killed then.
     console.log(JSON.stringify({ session, started: true }));
     collecting = true;
@@ -112,7 +114,7 @@ export async function bridge(turn: Turn) {
   }
 }
 
-if (import.meta.main) {
+if (import.meta.main ?? (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(import.meta.filename))) {
   bridge(JSON.parse(process.argv[2])).catch((error) => {
     console.error(error.message);
     process.exitCode = 1;

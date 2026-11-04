@@ -4,6 +4,7 @@ import { tail, type Adapter, type Reading } from "../../worker/agents.ts";
 export default {
   command: (turn) => [
     process.execPath,
+    "--experimental-strip-types",
     "--disable-warning=ExperimentalWarning",
     join(import.meta.dirname, "bridge.ts"),
     JSON.stringify(turn),

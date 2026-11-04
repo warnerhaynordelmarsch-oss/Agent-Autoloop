@@ -6,6 +6,7 @@ import type { Adapter } from "../../worker/agents.ts";
 export default {
   command: (turn) => [
     process.execPath,
+    "--experimental-strip-types",
     "--disable-warning=ExperimentalWarning",
     join(import.meta.dirname, "run.ts"),
     ...(turn.command ?? []),

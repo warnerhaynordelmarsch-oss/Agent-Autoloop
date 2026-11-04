@@ -1,0 +1,64 @@
+{
+  "sources": {
+    "qq-mail": {
+      "name": "QQ 邮箱",
+      "adapter": "qq-mail"
+    }
+  },
+  "agents": {
+    "watcher": {
+      "name": "QQ 邮箱巡检",
+      "worker": "local",
+      "use": "command",
+      "command": ["sh", "~/Agent-Autoloop/examples/watch-qq-mail.sh", "10"]
+    },
+    "agy": {
+      "name": "Antigravity (agy)",
+      "worker": "local",
+      "use": "agy",
+      "access": "edit"
+    },
+    "codex": {
+      "name": "Codex",
+      "worker": "local",
+      "use": "codex",
+      "access": "edit"
+    },
+    "claude": {
+      "name": "Claude Code",
+      "worker": "local",
+      "use": "claude",
+      "access": "read"
+    }
+  },
+  "channels": {
+    "desktop": {
+      "name": "桌面通知"
+    }
+  },
+  "rules": [
+    {
+      "name": "拉取 QQ 邮箱新邮件",
+      "when": {
+        "cron": "*/5 * * * *"
+      },
+      "to": "watcher",
+      "cwd": "~/.agent-autoloop",
+      "prompt": "拉取最新未读邮件",
+      "emits": {
+        "source": "qq-mail",
+        "types": ["mail.urgent", "mail.unread"]
+      }
+    },
+    {
+      "name": "处理紧急与未读邮件",
+      "when": {
+        "source": "qq-mail",
+        "types": ["mail.urgent", "mail.unread"]
+      },
+      "to": "agy",
+      "cwd": "~/.agent-autoloop",
+      "prompt": "阅读资料文件中的邮件内容。若是验证码或紧急告警，立即发 notice 或 ask 卡片通知主人；若是需要回复的邮件，先拟好草稿发 ask 卡片请主人拍板后再调用 qq-mail send 发送。"
+    }
+  ]
+}

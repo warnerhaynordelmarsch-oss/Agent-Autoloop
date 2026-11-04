@@ -31,6 +31,7 @@ const run = (resume: string | null, prompt = "完成了") =>
     const child = spawn(
       process.execPath,
       [
+        "--experimental-strip-types",
         "--disable-warning=ExperimentalWarning",
         join(import.meta.dirname, "../plugins/acp/bridge.ts"),
         JSON.stringify({ command: [process.execPath, fake], cwd: home, prompt, access: "read", resume }),

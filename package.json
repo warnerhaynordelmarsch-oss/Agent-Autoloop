@@ -10,20 +10,20 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=24"
+    "node": ">=22.16.0"
   },
   "bin": {
     "agent-autoloop": "bin/agent-autoloop.ts"
   },
   "scripts": {
-    "test": "node --disable-warning=ExperimentalWarning --test tests/*.test.ts",
-    "test:quick": "node --disable-warning=ExperimentalWarning --test $(ls tests/*.test.ts | grep -v /simulation.test.ts)",
+    "test": "NODE_OPTIONS=\"--experimental-strip-types --disable-warning=ExperimentalWarning\" node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/*.test.ts",
+    "test:quick": "NODE_OPTIONS=\"--experimental-strip-types --disable-warning=ExperimentalWarning\" node --experimental-strip-types --disable-warning=ExperimentalWarning --test $(ls tests/*.test.ts | grep -v /simulation.test.ts)",
     "typecheck": "tsc -p .",
     "format": "prettier --write \"**/*.{ts,json,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,json,yml}\"",
-    "test:sim": "node --disable-warning=ExperimentalWarning sim/random.ts 24301 20000",
-    "test:nightly": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 sim/*.test.ts && node --disable-warning=ExperimentalWarning scripts/benchmark.ts --check",
-    "benchmark": "node --disable-warning=ExperimentalWarning scripts/benchmark.ts --check"
+    "test:sim": "NODE_OPTIONS=\"--experimental-strip-types --disable-warning=ExperimentalWarning\" node --experimental-strip-types --disable-warning=ExperimentalWarning sim/random.ts 24301 20000",
+    "test:nightly": "NODE_OPTIONS=\"--experimental-strip-types --disable-warning=ExperimentalWarning\" node --experimental-strip-types --disable-warning=ExperimentalWarning --test --test-concurrency=1 sim/*.test.ts && NODE_OPTIONS=\"--experimental-strip-types --disable-warning=ExperimentalWarning\" node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/benchmark.ts --check",
+    "benchmark": "NODE_OPTIONS=\"--experimental-strip-types --disable-warning=ExperimentalWarning\" node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/benchmark.ts --check"
   },
   "devDependencies": {
     "@types/node": "26.6.4",

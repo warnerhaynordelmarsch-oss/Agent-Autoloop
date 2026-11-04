@@ -18,7 +18,7 @@ const PROGRAM = path.join(ROOT, "bin", "agent-autoloop.ts");
 
 const HELP = `Agent 自动化中台
 
-  agent-autoloop init [--agent claude|codex] [--command '某个命令 {prompt}'] [--port 3350] [--no-service]
+  agent-autoloop init [--agent agy|claude|codex] [--command '某个命令 {prompt}'] [--port 3350] [--no-service]
                                     在这台电脑上装好：一个人一台电脑就够
   agent-autoloop try                     用你的 Agent 跑一遍完整流程
   agent-autoloop why <第几轮> [--json]  查看时间线；--json 输出原始事实
@@ -110,6 +110,13 @@ function linkSkill() {
     mkdirSync(path.dirname(link), { recursive: true });
     symlinkSync(path.join(ROOT, "skills", "agent-autoloop"), link);
   }
+  if (existsSync(path.join(homedir(), ".config", "alma"))) {
+    const link = path.join(homedir(), ".config", "alma", "skills", "agent-autoloop");
+    if (!lstatSync(link, { throwIfNoEntry: false })) {
+      mkdirSync(path.dirname(link), { recursive: true });
+      symlinkSync(path.join(ROOT, "skills", "agent-autoloop"), link);
+    }
+  }
 }
 
 /** What to type to run this program: its name if that's what a shell finds, otherwise where it is. */
@@ -138,13 +145,17 @@ async function agentsToUse(named: Flags, worker: string) {
     contextFile: "",
     folder: "",
   } as const;
-  for (const name of ["claude", "codex"]) {
+  for (const name of ["claude", "codex", "agy"]) {
     if (wanted && wanted !== name) continue;
     const adapter = await adapterFor(name);
     try {
       // An adapter finds its program to build the command line, and throws if it's not there.
       adapter.command(emptyTurn);
-      agents[name] = { name: name === "claude" ? "Claude Code" : "Codex", worker, use: name };
+      agents[name] = {
+        name: name === "claude" ? "Claude Code" : name === "codex" ? "Codex" : "Antigravity (agy)",
+        worker,
+        use: name,
+      };
     } catch {}
   }
   return agents;

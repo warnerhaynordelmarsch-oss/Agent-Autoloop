@@ -16,7 +16,7 @@ test("a systemd service keeps its existing structure and zero-argument use", () 
   assert.ok(service.includes('Environment="AGENT_AUTOLOOP_HOME=/home/me/.agent-autoloop"'));
   assert.ok(
     service.includes(
-      'ExecStart="/usr/bin/node" "--disable-warning=ExperimentalWarning" "/opt/agent-autoloop/bin/agent-autoloop.ts" "up"',
+      'ExecStart="/usr/bin/node" "--experimental-strip-types" "--disable-warning=ExperimentalWarning" "/opt/agent-autoloop/bin/agent-autoloop.ts" "up"',
     ),
   );
   assert.ok(service.includes("Restart=always\nRestartSec=10"));
@@ -37,7 +37,7 @@ test("systemd receives spaces and special path characters literally", () => {
   );
   assert.ok(
     service.includes(
-      String.raw`ExecStart="/opt/Node $$cache%%/say\"hi\"/node" "--disable-warning=ExperimentalWarning" "/opt/Agent Work/$$repo%%/back\\slash/agent.ts" "up"`,
+      String.raw`ExecStart="/opt/Node $$cache%%/say\"hi\"/node" "--experimental-strip-types" "--disable-warning=ExperimentalWarning" "/opt/Agent Work/$$repo%%/back\\slash/agent.ts" "up"`,
     ),
   );
 });

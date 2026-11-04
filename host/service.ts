@@ -33,7 +33,7 @@ export function plist() {
   const logs = path.join(HOME, "logs");
   const systemPaths = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"];
   const searchPath = [path.dirname(process.execPath), ...systemPaths].join(":");
-  const program = [process.execPath, "--disable-warning=ExperimentalWarning", PROGRAM, "up"];
+  const program = [process.execPath, "--experimental-strip-types", "--disable-warning=ExperimentalWarning", PROGRAM, "up"];
   const programArguments = program.map((part) => `<string>${xml(part)}</string>`).join("");
   const homeEntry = `<key>AGENT_AUTOLOOP_HOME</key><string>${xml(HOME)}</string>`;
   const pathEntry = `<key>PATH</key><string>${xml(searchPath)}</string>`;
@@ -54,7 +54,7 @@ export function plist() {
 
 export function unit(options: UnitOptions = { home: HOME, executable: process.execPath, program: PROGRAM }) {
   const environment = systemdItem(`AGENT_AUTOLOOP_HOME=${options.home}`);
-  const command = [options.executable, "--disable-warning=ExperimentalWarning", options.program, "up"]
+  const command = [options.executable, "--experimental-strip-types", "--disable-warning=ExperimentalWarning", options.program, "up"]
     .map((part) => systemdItem(part, true))
     .join(" ");
   return `[Unit]
